@@ -26,9 +26,9 @@ const HeroSection = ({ onSearchClick }: HeroSectionProps) => {
           <div className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-heading font-bold text-white leading-tight">
               Discover Your
-              <span className="block bg-gradient-hero bg-clip-text text-transparent drop-shadow-lg" style={{
-                textShadow: '0 0 30px rgba(0, 102, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3)',
-                WebkitTextStroke: '1px rgba(255, 255, 255, 0.1)'
+              <span className="block bg-gradient-hero bg-clip-text text-transparent font-extrabold tracking-tight" style={{
+                filter: 'drop-shadow(0 4px 12px rgba(0, 102, 255, 0.3)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
+                backgroundImage: 'linear-gradient(135deg, #0066FF 0%, #8B5CF6 50%, #EC4899 100%)'
               }}>
                 Perfect Race
               </span>
