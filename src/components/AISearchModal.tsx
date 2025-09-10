@@ -78,8 +78,8 @@ const AISearchModal = ({ open, onOpenChange }: AISearchModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[80vh] p-0 gap-0">
-        <DialogHeader className="p-6 border-b">
+      <DialogContent className="max-w-4xl h-[80vh] p-0 gap-0 bg-white shadow-xl border border-border z-50">
+        <DialogHeader className="p-6 border-b bg-white">
           <DialogTitle className="flex items-center gap-2 text-xl font-heading">
             <Sparkles className="h-5 w-5 text-primary" />
             AI Race Discovery
@@ -162,7 +162,7 @@ const AISearchModal = ({ open, onOpenChange }: AISearchModalProps) => {
             </ScrollArea>
 
             {/* Input Area */}
-            <div className="p-6 border-t">
+            <div className="p-6 border-t bg-white">
               <div className="flex gap-2">
                 <Input
                   placeholder="Ask me about races..."

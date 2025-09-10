@@ -115,7 +115,7 @@ const FilterSidebar = ({ isOpen = true, onClose, className }: FilterSidebarProps
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 bg-white shadow-lg border border-border" align="start">
                 <Calendar
                   initialFocus
                   mode="range"
@@ -137,7 +137,7 @@ const FilterSidebar = ({ isOpen = true, onClose, className }: FilterSidebarProps
             <SelectTrigger>
               <SelectValue placeholder="Select a state" />
             </SelectTrigger>
-            <SelectContent className="max-h-60">
+            <SelectContent className="max-h-60 bg-white shadow-lg border border-border z-50">
               {states.map((state) => (
                 <SelectItem key={state} value={state}>
                   {state}

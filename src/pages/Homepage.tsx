@@ -215,7 +215,7 @@ const Homepage = () => {
                   <SelectTrigger className="w-48">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white shadow-lg border border-border z-50">
                     <SelectItem value="date">Sort by: Date</SelectItem>
                     <SelectItem value="distance">Sort by: Distance</SelectItem>
                     <SelectItem value="location">Sort by: Location</SelectItem>

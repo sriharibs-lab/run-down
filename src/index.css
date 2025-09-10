@@ -143,4 +143,17 @@
   .badge-challenging {
     @apply bg-destructive/10 text-destructive border-destructive/20;
   }
+  
+  /* Dropdown and Popover fixes */
+  .dropdown-content {
+    @apply bg-white border border-border shadow-lg rounded-md z-50 min-w-[8rem];
+  }
+  
+  .popover-content {
+    @apply bg-white border border-border shadow-md rounded-lg z-50;
+  }
+  
+  .dialog-content {
+    @apply bg-white border border-border shadow-xl rounded-lg z-50;
+  }
 }
