@@ -82,7 +82,7 @@ const AISearchModal = ({ open, onOpenChange }: AISearchModalProps) => {
         <DialogHeader className="p-6 border-b bg-white">
           <DialogTitle className="flex items-center gap-2 text-xl font-heading">
             <Sparkles className="h-5 w-5 text-primary" />
-            AI Race Discovery
+            Run Down AI Search
           </DialogTitle>
         </DialogHeader>
 

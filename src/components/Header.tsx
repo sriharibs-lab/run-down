@@ -20,7 +20,7 @@ const Header = ({ onSearchClick }: HeaderProps) => {
               RD
             </div>
             <span className="text-xl font-heading font-bold text-foreground">
-              RaceDiscovery AI
+              Run Down
             </span>
           </div>
 
