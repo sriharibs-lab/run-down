@@ -26,7 +26,10 @@ const HeroSection = ({ onSearchClick }: HeroSectionProps) => {
           <div className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-heading font-bold text-white leading-tight">
               Discover Your
-              <span className="block bg-gradient-hero bg-clip-text text-transparent">
+              <span className="block bg-gradient-hero bg-clip-text text-transparent drop-shadow-lg" style={{
+                textShadow: '0 0 30px rgba(0, 102, 255, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3)',
+                WebkitTextStroke: '1px rgba(255, 255, 255, 0.1)'
+              }}>
                 Perfect Race
               </span>
             </h1>
