@@ -6,11 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Sparkles, MessageCircle } from "lucide-react";
 import RaceCard from "./RaceCard";
 import { useNavigate } from "react-router-dom";
-
-// Mock race data
-import trailRaceImage from "@/assets/trail-race.jpg";
-import cityMarathonImage from "@/assets/city-marathon.jpg";
-import coastalRaceImage from "@/assets/coastal-race.jpg";
+import { getRacesForCards } from "@/lib/raceData";
 
 interface AISearchModalProps {
   open: boolean;
@@ -29,28 +25,9 @@ const AISearchModal = ({ open, onOpenChange }: AISearchModalProps) => {
     "Trail races within 2 hours of Seattle"
   ];
 
-  const mockRaces = [
-    {
-      id: "1",
-      image: cityMarathonImage,
-      name: "Chicago Lakefront Marathon",
-      date: "October 15, 2024",
-      location: "Chicago, IL",
-      distances: ["Marathon"],
-      difficulty: "Easy" as const,
-      participants: 45000
-    },
-    {
-      id: "2", 
-      image: coastalRaceImage,
-      name: "Boston Qualifier Fast Track",
-      date: "November 3, 2024",
-      location: "Austin, TX",
-      distances: ["Marathon"],
-      difficulty: "Easy" as const,
-      participants: 8000
-    }
-  ];
+  // Get sample races from JSON data for AI search results
+  const allRaces = getRacesForCards();
+  const mockRaces = allRaces.slice(0, 2); // Use first 2 races as examples
 
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;

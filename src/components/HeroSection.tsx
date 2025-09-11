@@ -4,9 +4,10 @@ import { ArrowRight, Search } from "lucide-react";
 
 interface HeroSectionProps {
   onSearchClick?: () => void;
+  onBrowseClick?: () => void;
 }
 
-const HeroSection = ({ onSearchClick }: HeroSectionProps) => {
+const HeroSection = ({ onSearchClick, onBrowseClick }: HeroSectionProps) => {
   return (
     <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       {/* Background Image */}
@@ -53,6 +54,7 @@ const HeroSection = ({ onSearchClick }: HeroSectionProps) => {
             <Button 
               size="lg" 
               variant="outline"
+              onClick={onBrowseClick}
               className="btn-ghost-primary text-lg px-8 py-4 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white hover:text-primary"
             >
               Browse All Races

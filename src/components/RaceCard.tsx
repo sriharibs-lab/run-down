@@ -39,7 +39,7 @@ const RaceCard = ({
 
   return (
     <Card 
-      className="card-race cursor-pointer group h-full"
+      className="card-race cursor-pointer group h-full transition-all duration-300 hover:shadow-xl hover:scale-105 hover:border-primary/20"
       onClick={onClick}
     >
       {/* Race Image */}
@@ -47,7 +47,7 @@ const RaceCard = ({
         <img
           src={image}
           alt={name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
         <div className="absolute top-3 right-3">
           <Badge className={`${getDifficultyBadgeClass(difficulty)} border font-medium`}>

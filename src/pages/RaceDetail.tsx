@@ -17,40 +17,55 @@ import {
   Share2,
   Heart
 } from "lucide-react";
-
-// Import images
-import cityMarathonImage from "@/assets/city-marathon.jpg";
 import Header from "@/components/Header";
+import { getRaceById } from "@/lib/raceData";
 
 const RaceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = useState(false);
 
-  // Mock race data - in real app, this would be fetched based on ID
+  // Get race data from JSON based on ID
+  const raceData = getRaceById(id || "1");
+  
+  if (!raceData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Race Not Found</h1>
+          <Button onClick={() => navigate("/")}>Back to Home</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Transform race data for display
   const race = {
-    id: "1",
-    name: "Chicago Lakefront Marathon",
-    image: cityMarathonImage,
-    date: "October 15, 2024",
-    location: "Chicago, IL",
-    distances: ["Marathon", "Half Marathon", "10K"],
-    difficulty: "Easy",
-    participants: 45000,
-    elevationGain: 150,
-    courseType: "Road",
+    id: raceData.id,
+    name: raceData.name,
+    image: raceData.imageUrl,
+    date: new Date(raceData.date).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }),
+    location: `${raceData.city}, ${raceData.state}`,
+    distances: [raceData.distance],
+    difficulty: raceData.difficulty,
+    participants: raceData.participants,
+    elevationGain: raceData.distance === "Marathon" ? 150 : raceData.distance === "Ultra" ? 5000 : 50,
+    courseType: raceData.distance === "Ultra" ? "Trail" : "Road",
     startTime: "7:00 AM",
-    description: "Experience the beauty of Chicago's lakefront with this fast and scenic marathon course. Run alongside Lake Michigan with stunning city skyline views while aiming for your personal best. This USATF certified course offers ideal conditions for Boston Qualifier attempts with minimal elevation gain and excellent crowd support throughout the 26.2 mile journey.",
+    description: raceData.description,
     highlights: [
-      "USATF certified & Boston Qualifier eligible",
-      "Spectacular Lake Michigan views",
-      "World-class organization & support",
-      "Post-race celebration in Grant Park",
-      "Professional timing & photography"
+      `${raceData.difficulty} difficulty level`,
+      `${raceData.participants.toLocaleString()} expected participants`,
+      raceData.hasKidsRace ? "Family-friendly with kids races" : "Adults only",
+      "Professional timing & support"
     ],
-    weatherExpected: "Cool and clear, 45-55°F",
+    weatherExpected: "Check race website for weather updates",
     registrationStatus: "Open",
-    price: "$120-180"
+    price: "$50-200"
   };
 
   const keyDetails = [

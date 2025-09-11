@@ -6,11 +6,7 @@ import FilterSidebar from "@/components/FilterSidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Grid, Filter, X } from "lucide-react";
-
-// Import race images
-import trailRaceImage from "@/assets/trail-race.jpg";
-import cityMarathonImage from "@/assets/city-marathon.jpg";
-import coastalRaceImage from "@/assets/coastal-race.jpg";
+import { getRacesWithCoordinates } from "@/lib/raceData";
 
 const MapView = () => {
   const navigate = useNavigate();
@@ -18,42 +14,8 @@ const MapView = () => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showRaceList, setShowRaceList] = useState(false);
 
-  // Mock race data with coordinates
-  const races = [
-    {
-      id: "1",
-      image: cityMarathonImage,
-      name: "Chicago Lakefront Marathon",
-      date: "October 15, 2024",
-      location: "Chicago, IL",
-      distances: ["Marathon"],
-      difficulty: "Easy" as const,
-      participants: 45000,
-      coordinates: { lat: 41.8781, lng: -87.6298 }
-    },
-    {
-      id: "2",
-      image: coastalRaceImage,
-      name: "Pacific Coast Half Marathon",
-      date: "November 3, 2024",
-      location: "San Diego, CA",
-      distances: ["Half Marathon", "10K"],
-      difficulty: "Moderate" as const,
-      participants: 12000,
-      coordinates: { lat: 32.7157, lng: -117.1611 }
-    },
-    {
-      id: "3",
-      image: trailRaceImage,
-      name: "Mountain Trail Challenge",
-      date: "September 28, 2024",
-      location: "Boulder, CO",
-      distances: ["Ultra", "Marathon"],
-      difficulty: "Challenging" as const,
-      participants: 3500,
-      coordinates: { lat: 40.0150, lng: -105.2705 }
-    }
-  ];
+  // Get race data with coordinates from JSON
+  const races = getRacesWithCoordinates();
 
   const selectedRaceData = races.find(race => race.id === selectedRace);
 

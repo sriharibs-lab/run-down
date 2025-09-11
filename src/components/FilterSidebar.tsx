@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,12 +13,31 @@ interface FilterSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   className?: string;
+  filters?: {
+    distances: string[];
+    difficulty: string;
+    state: string;
+    hasKidsRace: boolean | undefined;
+    dateRange: DateRange | undefined;
+  };
+  onFiltersChange?: (filters: Partial<FilterSidebarProps['filters']>) => void;
+  onClearFilters?: () => void;
 }
 
-const FilterSidebar = ({ isOpen = true, onClose, className }: FilterSidebarProps) => {
-  const [selectedDistances, setSelectedDistances] = useState<string[]>([]);
-  const [selectedState, setSelectedState] = useState<string>("");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+const FilterSidebar = ({ 
+  isOpen = true, 
+  onClose, 
+  className, 
+  filters = {
+    distances: [],
+    difficulty: "",
+    state: "",
+    hasKidsRace: undefined,
+    dateRange: undefined,
+  }, 
+  onFiltersChange = () => {}, 
+  onClearFilters = () => {} 
+}: FilterSidebarProps) => {
 
   const distances = ["5K", "10K", "Half Marathon", "Marathon", "Ultra"];
   
@@ -36,16 +54,18 @@ const FilterSidebar = ({ isOpen = true, onClose, className }: FilterSidebarProps
 
   const handleDistanceChange = (distance: string, checked: boolean) => {
     if (checked) {
-      setSelectedDistances([...selectedDistances, distance]);
+      onFiltersChange({ distances: [...filters.distances, distance] });
     } else {
-      setSelectedDistances(selectedDistances.filter(d => d !== distance));
+      onFiltersChange({ distances: filters.distances.filter(d => d !== distance) });
     }
   };
 
-  const clearFilters = () => {
-    setSelectedDistances([]);
-    setSelectedState("");
-    setDateRange(undefined);
+  const handleStateChange = (state: string) => {
+    onFiltersChange({ state });
+  };
+
+  const handleDateRangeChange = (dateRange: DateRange | undefined) => {
+    onFiltersChange({ dateRange });
   };
 
   return (
@@ -71,7 +91,7 @@ const FilterSidebar = ({ isOpen = true, onClose, className }: FilterSidebarProps
               <div key={distance} className="flex items-center space-x-2">
                 <Checkbox
                   id={distance}
-                  checked={selectedDistances.includes(distance)}
+                  checked={filters.distances.includes(distance)}
                   onCheckedChange={(checked) => 
                     handleDistanceChange(distance, checked as boolean)
                   }
@@ -97,18 +117,18 @@ const FilterSidebar = ({ isOpen = true, onClose, className }: FilterSidebarProps
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !dateRange?.from && "text-muted-foreground"
+                    !filters.dateRange?.from && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange?.from ? (
-                    dateRange.to ? (
+                  {filters.dateRange?.from ? (
+                    filters.dateRange.to ? (
                       <>
-                        {format(dateRange.from, "LLL dd, y")} -{" "}
-                        {format(dateRange.to, "LLL dd, y")}
+                        {format(filters.dateRange.from, "LLL dd, y")} -{" "}
+                        {format(filters.dateRange.to, "LLL dd, y")}
                       </>
                     ) : (
-                      format(dateRange.from, "LLL dd, y")
+                      format(filters.dateRange.from, "LLL dd, y")
                     )
                   ) : (
                     <span>Pick a date range</span>
@@ -119,9 +139,9 @@ const FilterSidebar = ({ isOpen = true, onClose, className }: FilterSidebarProps
                 <Calendar
                   initialFocus
                   mode="range"
-                  defaultMonth={dateRange?.from}
-                  selected={dateRange}
-                  onSelect={setDateRange}
+                  defaultMonth={filters.dateRange?.from}
+                  selected={filters.dateRange}
+                  onSelect={handleDateRangeChange}
                   numberOfMonths={2}
                   className="pointer-events-auto"
                 />
@@ -133,11 +153,12 @@ const FilterSidebar = ({ isOpen = true, onClose, className }: FilterSidebarProps
         {/* State Filter */}
         <div className="space-y-3">
           <h3 className="font-medium font-heading">State</h3>
-          <Select value={selectedState} onValueChange={setSelectedState}>
+          <Select value={filters.state} onValueChange={handleStateChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select a state" />
             </SelectTrigger>
             <SelectContent className="max-h-60 bg-white shadow-lg border border-border z-50">
+              <SelectItem value="">All States</SelectItem>
               {states.map((state) => (
                 <SelectItem key={state} value={state}>
                   {state}
@@ -150,7 +171,7 @@ const FilterSidebar = ({ isOpen = true, onClose, className }: FilterSidebarProps
         {/* Clear Filters */}
         <Button 
           variant="outline" 
-          onClick={clearFilters}
+          onClick={onClearFilters}
           className="w-full"
         >
           Clear All Filters
