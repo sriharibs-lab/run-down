@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import RaceCard from "@/components/RaceCard";
-import AISearchModal from "@/components/AISearchModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 
 const Homepage = () => {
-  const [showAISearch, setShowAISearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [selectedDistances, setSelectedDistances] = useState<string[]>([]);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
@@ -55,6 +54,7 @@ const Homepage = () => {
   };
 
   const clearFilters = () => {
+    setSearchQuery("");
     setSelectedDistances([]);
     setSelectedStates([]);
     setDateRange(undefined);
@@ -63,21 +63,21 @@ const Homepage = () => {
   // Filter and sort races based on selected criteria
   const filteredAndSortedRaces = useMemo(() => {
     const filters = {
+      searchQuery: searchQuery.trim() || undefined,
       distances: selectedDistances.length > 0 ? selectedDistances : undefined,
       state: selectedStates.length > 0 ? selectedStates : undefined,
       dateRange: dateRange
     };
     
     return getFilteredAndSortedRaces(filters, sortBy);
-  }, [sortBy, selectedDistances, selectedStates, dateRange]);
+  }, [searchQuery, sortBy, selectedDistances, selectedStates, dateRange]);
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSearchClick={() => setShowAISearch(true)} />
+      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       
       {/* Hero Section */}
       <HeroSection 
-        onSearchClick={() => setShowAISearch(true)} 
         onBrowseClick={handleBrowseClick}
       />
 
@@ -92,7 +92,7 @@ const Homepage = () => {
                   <Filter className="h-5 w-5 text-primary" />
                   <h3 className="font-heading font-semibold text-lg">Filters</h3>
                 </div>
-                {(selectedDistances.length > 0 || selectedStates.length > 0 || dateRange) && (
+                {(searchQuery || selectedDistances.length > 0 || selectedStates.length > 0 || dateRange) && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -264,11 +264,6 @@ const Homepage = () => {
         </div>
       </div>
 
-      {/* AI Search Modal */}
-      <AISearchModal
-        open={showAISearch}
-        onOpenChange={setShowAISearch}
-      />
     </div>
   );
 };

@@ -1,13 +1,12 @@
 import heroImage from "@/assets/hero-runners.jpg";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 interface HeroSectionProps {
-  onSearchClick?: () => void;
   onBrowseClick?: () => void;
 }
 
-const HeroSection = ({ onSearchClick, onBrowseClick }: HeroSectionProps) => {
+const HeroSection = ({ onBrowseClick }: HeroSectionProps) => {
   return (
     <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       {/* Background Image */}
@@ -35,29 +34,20 @@ const HeroSection = ({ onSearchClick, onBrowseClick }: HeroSectionProps) => {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-              AI-powered search for running events across America. 
+              Discover running events across America. 
               Find races by distance, location, and terrain preferences.
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          {/* Action Button */}
+          <div className="flex justify-center">
             <Button 
               size="lg" 
-              onClick={onSearchClick}
+              onClick={onBrowseClick}
               className="btn-hero text-lg px-8 py-4 group"
             >
-              <Search className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-              Start AI Search
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={onBrowseClick}
-              className="btn-ghost-primary text-lg px-8 py-4 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white hover:text-primary"
-            >
               Browse All Races
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
 

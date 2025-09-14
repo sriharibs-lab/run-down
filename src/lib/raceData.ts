@@ -75,6 +75,7 @@ export const getRacesWithCoordinates = () => {
 
 // Filter races by various criteria
 export const filterRaces = (filters: {
+  searchQuery?: string;
   distances?: string[];
   difficulty?: string;
   state?: string | string[];
@@ -82,6 +83,23 @@ export const filterRaces = (filters: {
   dateRange?: DateRange;
 }) => {
   return racesData.filter(race => {
+    // Search query filter
+    if (filters.searchQuery) {
+      const searchLower = filters.searchQuery.toLowerCase();
+      const searchableText = [
+        race.name,
+        race.city,
+        race.state,
+        race.distance,
+        race.difficulty,
+        race.description
+      ].join(' ').toLowerCase();
+      
+      if (!searchableText.includes(searchLower)) {
+        return false;
+      }
+    }
+    
     // Distance filter
     if (filters.distances && filters.distances.length > 0 && !filters.distances.includes(race.distance)) {
       return false;
@@ -157,6 +175,7 @@ export const sortRaces = (races: ReturnType<typeof transformRaceForCard>[], sort
 // Combined filter and sort function
 export const getFilteredAndSortedRaces = (
   filters: {
+    searchQuery?: string;
     distances?: string[];
     difficulty?: string;
     state?: string | string[];
