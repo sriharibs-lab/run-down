@@ -45,7 +45,7 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
               Roadmap
             </Link>
             <a 
-              href="https://sriharibs.com"
+              href="https://srihari.lovable.app"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
