@@ -1,0 +1,28 @@
+name: Fetch Latest Race Data
+
+on:
+  schedule:
+    - cron: '0 11 * * *'  # 3am PST (11am UTC) - after scraper runs at 2am
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  update-races:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Fetch latest races.json from scraper
+      run: |
+        curl -L -o src/data/races.json https://raw.githubusercontent.com/sriharibs-lab/race-scraper/main/races.json
+    
+    - name: Commit and push if changed
+      run: |
+        git config --global user.name 'GitHub Action Bot'
+        git config --global user.email 'action@github.com'
+        git add src/data/races.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update race data $(date +'%Y-%m-%d')" && git push)

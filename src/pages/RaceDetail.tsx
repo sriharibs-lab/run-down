@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +25,19 @@ const RaceDetail = () => {
   const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = useState(false);
 
+  // Scroll to top when component loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  // Function to strip HTML tags from description
+  const stripHtmlTags = (html: string): string => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+  };
+
   // Get race data from JSON based on ID
-  const raceData = getRaceById(id || "1");
+  const raceData = getRaceById(id || "101368_1035154");
   
   if (!raceData) {
     return (
@@ -44,28 +55,42 @@ const RaceDetail = () => {
     id: raceData.id,
     name: raceData.name,
     image: raceData.imageUrl,
-    date: new Date(raceData.date).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }),
+    date: (() => {
+      try {
+        let date: Date;
+        if (raceData.date.includes('/')) {
+          const [month, day, year] = raceData.date.split('/');
+          date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+          date = new Date(raceData.date);
+        }
+        return date.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      } catch (error) {
+        return raceData.date;
+      }
+    })(),
     location: `${raceData.city}, ${raceData.state}`,
-    distances: [raceData.distance],
+    distances: raceData.distanceOptions || [raceData.distance],
     difficulty: raceData.difficulty,
     participants: raceData.participants,
-    elevationGain: raceData.distance === "Marathon" ? 150 : raceData.distance === "Ultra" ? 5000 : 50,
-    courseType: raceData.distance === "Ultra" ? "Trail" : "Road",
-    startTime: "7:00 AM",
-    description: raceData.description,
+    elevationGain: raceData.elevationGain || (raceData.distance.includes("Marathon") ? 150 : raceData.distance.includes("Ultra") ? 5000 : 50),
+    courseType: raceData.courseType || (raceData.distance.includes("Ultra") ? "Trail" : "Road"),
+    startTime: raceData.startTime || "7:00 AM",
+    description: stripHtmlTags(raceData.description),
+    registrationUrl: raceData.registrationUrl,
     highlights: [
       `${raceData.difficulty} difficulty level`,
-      `${raceData.participants.toLocaleString()} expected participants`,
+      ...(raceData.participants ? [`${raceData.participants.toLocaleString()} expected participants`] : []),
       raceData.hasKidsRace ? "Family-friendly with kids races" : "Adults only",
       "Professional timing & support"
     ],
     weatherExpected: "Check race website for weather updates",
     registrationStatus: "Open",
-    price: "$50-200"
+    price: raceData.registrationFee || "$50-200"
   };
 
   const keyDetails = [
@@ -74,7 +99,7 @@ const RaceDetail = () => {
     { label: "Elevation Gain", value: `${race.elevationGain} ft`, icon: Mountain },
     { label: "Course Type", value: race.courseType, icon: Route },
     { label: "Start Time", value: race.startTime, icon: Clock },
-    { label: "Expected Participants", value: race.participants.toLocaleString(), icon: Users }
+    ...(race.participants ? [{ label: "Expected Participants", value: race.participants.toLocaleString(), icon: Users }] : [])
   ];
 
   return (
@@ -143,10 +168,12 @@ const RaceDetail = () => {
                 <MapPin className="h-5 w-5" />
                 <span className="font-medium">{race.location}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                <span className="font-medium">{race.participants.toLocaleString()} runners</span>
-              </div>
+              {race.participants && (
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  <span className="font-medium">{race.participants.toLocaleString()} runners</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -160,7 +187,16 @@ const RaceDetail = () => {
               <h2 className="font-heading font-semibold text-lg">{race.name}</h2>
               <p className="text-sm text-muted-foreground">{race.price} • {race.date}</p>
             </div>
-            <Button className="btn-hero">
+            <Button 
+              className="btn-hero"
+              onClick={() => {
+                if (race.registrationUrl) {
+                  window.open(race.registrationUrl, '_blank');
+                } else {
+                  console.error('Registration URL not found for race:', race.name);
+                }
+              }}
+            >
               <ExternalLink className="h-4 w-4 mr-2" />
               Visit Race Website
             </Button>
@@ -233,7 +269,16 @@ const RaceDetail = () => {
                   <div className="text-sm text-muted-foreground">Registration Fee</div>
                 </div>
                 <Separator />
-                <Button className="w-full btn-hero">
+                <Button 
+                  className="w-full btn-hero"
+                  onClick={() => {
+                    if (race.registrationUrl) {
+                      window.open(race.registrationUrl, '_blank');
+                    } else {
+                      console.error('Registration URL not found for race:', race.name);
+                    }
+                  }}
+                >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Register Now
                 </Button>

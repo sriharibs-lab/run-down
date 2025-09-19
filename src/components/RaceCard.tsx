@@ -9,7 +9,7 @@ interface RaceCardProps {
   date: string;
   location: string;
   distances: string[];
-  difficulty: "Easy" | "Moderate" | "Challenging";
+  difficulty: "Easy" | "Moderate" | "Challenging" | "Beginner";
   participants?: number;
   onClick?: () => void;
 }
@@ -58,8 +58,8 @@ const RaceCard = ({
 
       {/* Card Content */}
       <div className="p-4 space-y-3">
-        {/* Race Title */}
-        <h3 className="font-heading font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-2">
+        {/* Race Title - Fixed height to ensure consistent alignment */}
+        <h3 className="font-heading font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem]">
           {name}
         </h3>
 
@@ -67,7 +67,7 @@ const RaceCard = ({
         <div className="space-y-2">
           <div className="flex items-center text-sm text-muted-foreground gap-2">
             <Calendar className="h-4 w-4" />
-            <span>{date}</span>
+            <span className="font-medium">{date}</span>
           </div>
           <div className="flex items-center text-sm text-muted-foreground gap-2">
             <MapPin className="h-4 w-4" />
@@ -83,11 +83,17 @@ const RaceCard = ({
 
         {/* Distance Badges */}
         <div className="flex flex-wrap gap-2">
-          {distances.map((distance, index) => (
-            <Badge key={index} variant="outline" className="text-xs">
-              {distance}
+          {distances && distances.length > 0 ? (
+            distances.map((distance, index) => (
+              <Badge key={index} variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                {distance}
+              </Badge>
+            ))
+          ) : (
+            <Badge variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-700">
+              No distance info
             </Badge>
-          ))}
+          )}
         </div>
       </div>
     </Card>

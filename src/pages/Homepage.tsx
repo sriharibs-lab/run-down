@@ -12,6 +12,7 @@ import { Filter, Map, Calendar as CalendarIcon } from "lucide-react";
 import { getFilteredAndSortedRaces } from "@/lib/raceData";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Homepage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,6 +22,9 @@ const Homepage = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [showMapView, setShowMapView] = useState(false);
   const navigate = useNavigate();
+
+  // Debounce search query with 300ms delay
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Get all races from the full dataset
   const allRaces = getFilteredAndSortedRaces({}, sortBy);
@@ -63,14 +67,14 @@ const Homepage = () => {
   // Filter and sort races based on selected criteria
   const filteredAndSortedRaces = useMemo(() => {
     const filters = {
-      searchQuery: searchQuery.trim() || undefined,
+      searchQuery: debouncedSearchQuery.trim() || undefined,
       distances: selectedDistances.length > 0 ? selectedDistances : undefined,
       state: selectedStates.length > 0 ? selectedStates : undefined,
       dateRange: dateRange
     };
     
     return getFilteredAndSortedRaces(filters, sortBy);
-  }, [searchQuery, sortBy, selectedDistances, selectedStates, dateRange]);
+  }, [debouncedSearchQuery, sortBy, selectedDistances, selectedStates, dateRange]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -145,7 +149,7 @@ const Homepage = () => {
               <div className="space-y-4 pb-6">
                 <h4 className="font-medium font-heading text-foreground">Distance</h4>
                 <div className="space-y-3">
-                  {['5K', '10K', 'Half Marathon', 'Marathon', 'Ultra'].map((distance) => (
+                  {['Less than 5K', '5K', '10K', 'Half Marathon', 'Marathon', 'Ultra'].map((distance) => (
                     <div key={distance} className="flex items-center space-x-3 group">
                       <Checkbox
                         id={distance}
@@ -170,13 +174,7 @@ const Homepage = () => {
               <div className="space-y-4">
                 <h4 className="font-medium font-heading text-foreground">State</h4>
                 <div className="space-y-3 max-h-60 overflow-y-auto">
-                  {[
-                    'CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI',
-                    'NJ', 'VA', 'WA', 'AZ', 'MA', 'TN', 'IN', 'MO', 'MD', 'WI',
-                    'CO', 'MN', 'SC', 'AL', 'LA', 'KY', 'OR', 'OK', 'CT', 'UT',
-                    'IA', 'NV', 'AR', 'MS', 'KS', 'NM', 'NE', 'WV', 'ID', 'HI',
-                    'NH', 'ME', 'RI', 'MT', 'DE', 'SD', 'ND', 'AK', 'VT', 'WY'
-                  ].map((state) => (
+                  {['WA', 'OR', 'CA'].map((state) => (
                     <div key={state} className="flex items-center space-x-3 group">
                       <Checkbox
                         id={state}
@@ -208,7 +206,7 @@ const Homepage = () => {
                   Discover Races
                 </h2>
                 <p className="text-muted-foreground">
-                  {filteredAndSortedRaces.length} of {allRaces.length} races found across the United States
+                  {filteredAndSortedRaces.length} of {allRaces.length} races found in WA, OR, and CA (next 6 months)
                 </p>
               </div>
 
@@ -229,7 +227,6 @@ const Homepage = () => {
                     <SelectItem value="date" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-150">Sort by: Date</SelectItem>
                     <SelectItem value="distance" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-150">Sort by: Distance</SelectItem>
                     <SelectItem value="location" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-150">Sort by: Location</SelectItem>
-                    <SelectItem value="participants" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-150">Sort by: Popularity</SelectItem>
                     <SelectItem value="name" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-150">Sort by: Name</SelectItem>
                   </SelectContent>
                 </Select>
@@ -249,7 +246,7 @@ const Homepage = () => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
                   {filteredAndSortedRaces.map((race) => (
                     <RaceCard
                       key={race.id}
