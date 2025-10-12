@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
@@ -21,13 +21,32 @@ const Homepage = () => {
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [showMapView, setShowMapView] = useState(false);
+  const [allRaces, setAllRaces] = useState<any[]>([]);
+  const [totalAvailableRaces, setTotalAvailableRaces] = useState(0);
+  const [isLoadingRaces, setIsLoadingRaces] = useState(true);
   const navigate = useNavigate();
 
   // Debounce search query with 300ms delay
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Get all races from the full dataset
-  const allRaces = getFilteredAndSortedRaces({}, sortBy);
+  // Load initial race data
+  useEffect(() => {
+    const loadInitialRaces = async () => {
+      setIsLoadingRaces(true);
+      try {
+        // Get all available races
+        const races = await getFilteredAndSortedRaces({}, sortBy);
+        setTotalAvailableRaces(races.length);
+        setAllRaces(races);
+      } catch (error) {
+        console.error('Failed to load races:', error);
+      } finally {
+        setIsLoadingRaces(false);
+      }
+    };
+    
+    loadInitialRaces();
+  }, [sortBy]);
 
   const handleRaceClick = (raceId: string) => {
     navigate(`/race/${raceId}`);
@@ -65,15 +84,33 @@ const Homepage = () => {
   };
 
   // Filter and sort races based on selected criteria
-  const filteredAndSortedRaces = useMemo(() => {
-    const filters = {
-      searchQuery: debouncedSearchQuery.trim() || undefined,
-      distances: selectedDistances.length > 0 ? selectedDistances : undefined,
-      state: selectedStates.length > 0 ? selectedStates : undefined,
-      dateRange: dateRange
+  const [filteredAndSortedRaces, setFilteredAndSortedRaces] = useState<any[]>([]);
+  const [filteredTotalCount, setFilteredTotalCount] = useState(0);
+  const [isFiltering, setIsFiltering] = useState(false);
+
+  useEffect(() => {
+    const applyFilters = async () => {
+      setIsFiltering(true);
+      try {
+        const filters = {
+          searchQuery: debouncedSearchQuery.trim() || undefined,
+          distances: selectedDistances.length > 0 ? selectedDistances : undefined,
+          state: selectedStates.length > 0 ? selectedStates : undefined,
+          dateRange: dateRange
+        };
+        
+        // Get all matching races
+        const races = await getFilteredAndSortedRaces(filters, sortBy);
+        setFilteredTotalCount(races.length);
+        setFilteredAndSortedRaces(races);
+      } catch (error) {
+        console.error('Failed to filter races:', error);
+      } finally {
+        setIsFiltering(false);
+      }
     };
-    
-    return getFilteredAndSortedRaces(filters, sortBy);
+
+    applyFilters();
   }, [debouncedSearchQuery, sortBy, selectedDistances, selectedStates, dateRange]);
 
   return (
@@ -206,7 +243,7 @@ const Homepage = () => {
                   Discover Races
                 </h2>
                 <p className="text-muted-foreground">
-                  {filteredAndSortedRaces.length} of {allRaces.length} races found in WA, OR, and CA (next 6 months)
+                  {filteredAndSortedRaces.length} races found in WA, OR, and CA (next 6 months)
                 </p>
               </div>
 
@@ -235,7 +272,14 @@ const Homepage = () => {
         
             {/* Race Display - List or Map View */}
             <div className="races-section">
-              {showMapView ? (
+              {isLoadingRaces || isFiltering ? (
+                <div className="flex items-center justify-center py-20">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading races...</p>
+                  </div>
+                </div>
+              ) : showMapView ? (
                 <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
                   <div className="text-center">
                     <Map className="h-12 w-12 text-gray-400 mx-auto mb-4" />

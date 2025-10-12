@@ -1,7 +1,31 @@
 import { DateRange } from 'react-day-picker';
 
-// Import race data
-import racesData from '@/data/races.json';
+// Lazy load race data to avoid blocking the main thread
+let racesData: Race[] | null = null;
+let isLoading = false;
+
+const loadRacesData = async (): Promise<Race[]> => {
+  if (racesData) return racesData;
+  if (isLoading) {
+    // Wait for existing load to complete
+    while (isLoading) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return racesData || [];
+  }
+  
+  isLoading = true;
+  try {
+    const module = await import('@/data/races.json');
+    racesData = module.default as Race[];
+    return racesData;
+  } catch (error) {
+    console.error('Failed to load races data:', error);
+    return [];
+  } finally {
+    isLoading = false;
+  }
+};
 
 // Type definitions for the race data
 export interface Race {
@@ -30,12 +54,12 @@ export interface Race {
 export const transformRaceForCard = (race: Race) => {
   const transformed = {
     id: race.id,
-    image: race.imageUrl,
-    name: race.name,
+    image: race.imageUrl || '',
+    name: race.name || 'Untitled Race',
     date: formatDate(race.date),
-    location: `${race.city}, ${race.state}`,
+    location: `${race.city || 'Unknown'}, ${race.state || ''}`,
     distances: [mapDistanceToFilter(race.distance)],
-    difficulty: race.difficulty
+    difficulty: race.difficulty || 'Unknown'
   };
   
   // Only include participants if the data is available and greater than 0
@@ -76,6 +100,9 @@ const formatDate = (dateString: string): string => {
 
 // Map RunSignUp distance formats to standardized filter options
 const mapDistanceToFilter = (distance: string): string => {
+  if (!distance || typeof distance !== 'string') {
+    return 'Unknown';
+  }
   const distanceLower = distance.toLowerCase();
   
   // Check for longer distances first to avoid partial matches
@@ -121,8 +148,11 @@ const isWithinNext6Months = (dateString: string): boolean => {
     }
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    
     const sixMonthsFromNow = new Date();
     sixMonthsFromNow.setMonth(today.getMonth() + 6);
+    sixMonthsFromNow.setHours(23, 59, 59, 999); // End of that day
     
     return raceDate >= today && raceDate <= sixMonthsFromNow;
   } catch (error) {
@@ -144,8 +174,9 @@ const deduplicateRaces = (races: Race[]): Race[] => {
 };
 
 // Get all races (filtered to next 6 months and WA/OR/CA only, deduplicated)
-export const getAllRaces = (): Race[] => {
-  const filteredRaces = (racesData as Race[]).filter(race => {
+export const getAllRaces = async (limit?: number): Promise<Race[]> => {
+  const data = await loadRacesData();
+  const filteredRaces = data.filter(race => {
     // Filter by date (next 6 months)
     const isWithinTimeframe = isWithinNext6Months(race.date);
     
@@ -155,12 +186,14 @@ export const getAllRaces = (): Race[] => {
     return isWithinTimeframe && isInTargetStates;
   });
   
-  return deduplicateRaces(filteredRaces);
+  const deduplicated = deduplicateRaces(filteredRaces);
+  return limit ? deduplicated.slice(0, limit) : deduplicated;
 };
 
 // Get race by ID
-export const getRaceById = (id: string): Race | undefined => {
-  return racesData.find(race => race.id === id) as Race | undefined;
+export const getRaceById = async (id: string): Promise<Race | undefined> => {
+  const data = await loadRacesData();
+  return data.find(race => race.id === id);
 };
 
 // Get races for RaceCard components
@@ -192,8 +225,8 @@ const sortOriginalRaces = (races: Race[], sortBy: string): Race[] => {
     case 'distance':
       const distanceOrder = { 'Less than 5K': 1, '5K': 2, '10K': 3, 'Half Marathon': 4, 'Marathon': 5, 'Ultra': 6 };
       return sortedRaces.sort((a, b) => {
-        const distanceA = mapDistanceToFilter(a.distance);
-        const distanceB = mapDistanceToFilter(b.distance);
+        const distanceA = mapDistanceToFilter(a.distance || '');
+        const distanceB = mapDistanceToFilter(b.distance || '');
         const orderA = distanceOrder[distanceA as keyof typeof distanceOrder] || 999;
         const orderB = distanceOrder[distanceB as keyof typeof distanceOrder] || 999;
         return orderA - orderB;
@@ -213,7 +246,7 @@ const sortOriginalRaces = (races: Race[], sortBy: string): Race[] => {
 };
 
 // Combined filter and sort function
-export const getFilteredAndSortedRaces = (
+export const getFilteredAndSortedRaces = async (
   filters: {
     searchQuery?: string;
     distances?: string[];
@@ -221,19 +254,30 @@ export const getFilteredAndSortedRaces = (
     state?: string | string[];
     hasKidsRace?: boolean;
     dateRange?: DateRange;
+    limit?: number;
   },
   sortBy: string = 'date'
 ) => {
+  const data = await loadRacesData();
+  console.log('Total races loaded:', data.length);
+  
   // Start with base filtered data (6 months, WA/OR/CA only)
-  const baseFilteredRaces = (racesData as Race[]).filter(race => {
-    // Filter by date (next 6 months)
+  const baseFilteredRaces = data.filter(race => {
+    // Filter by date (next 6 months) - Fixed date logic
     const isWithinTimeframe = isWithinNext6Months(race.date);
     
-    // Filter by state (WA, OR, CA only)
+    // Filter by state (WA, OR, CA only) - Check actual states in data
     const isInTargetStates = ['WA', 'OR', 'CA'].includes(race.state);
+    
+    // Debug: count states we're seeing
+    if (!isInTargetStates && data.indexOf(race) < 100) {
+      console.log(`Non-target state found: ${race.state} for race: ${race.name}`);
+    }
     
     return isWithinTimeframe && isInTargetStates;
   });
+  
+  console.log('Base filtered races:', baseFilteredRaces.length);
 
   // Apply additional filters
   const filteredRaces = baseFilteredRaces.filter(race => {
@@ -241,12 +285,12 @@ export const getFilteredAndSortedRaces = (
     if (filters.searchQuery) {
       const searchLower = filters.searchQuery.toLowerCase();
       const searchableText = [
-        race.name,
-        race.city,
-        race.state,
-        race.distance,
-        race.difficulty,
-        race.description
+        race.name || '',
+        race.city || '',
+        race.state || '',
+        race.distance || '',
+        race.difficulty || '',
+        race.description || ''
       ].join(' ').toLowerCase();
       
       if (!searchableText.includes(searchLower)) {
@@ -256,7 +300,7 @@ export const getFilteredAndSortedRaces = (
     
     // Distance filter (use mapped distance)
     if (filters.distances && filters.distances.length > 0) {
-      const mappedDistance = mapDistanceToFilter(race.distance);
+      const mappedDistance = mapDistanceToFilter(race.distance || '');
       if (!filters.distances.includes(mappedDistance)) {
         return false;
       }
@@ -298,5 +342,8 @@ export const getFilteredAndSortedRaces = (
   
   // Sort original data first, then deduplicate and transform
   const sortedRaces = sortOriginalRaces(filteredRaces, sortBy);
-  return deduplicateRaces(sortedRaces).map(transformRaceForCard);
+  const deduplicatedRaces = deduplicateRaces(sortedRaces).map(transformRaceForCard);
+  
+  // Apply limit if specified
+  return filters.limit ? deduplicatedRaces.slice(0, filters.limit) : deduplicatedRaces;
 };

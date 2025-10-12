@@ -24,10 +24,29 @@ const RaceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = useState(false);
+  const [raceData, setRaceData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Scroll to top when component loads
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, [id]);
+
+  // Load race data
+  useEffect(() => {
+    const loadRaceData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getRaceById(id || "101368_1035154");
+        setRaceData(data);
+      } catch (error) {
+        console.error('Failed to load race data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadRaceData();
   }, [id]);
 
   // Function to strip HTML tags from description
@@ -36,8 +55,16 @@ const RaceDetail = () => {
     return doc.body.textContent || '';
   };
 
-  // Get race data from JSON based on ID
-  const raceData = getRaceById(id || "101368_1035154");
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading race details...</p>
+        </div>
+      </div>
+    );
+  }
   
   if (!raceData) {
     return (
@@ -53,10 +80,11 @@ const RaceDetail = () => {
   // Transform race data for display
   const race = {
     id: raceData.id,
-    name: raceData.name,
-    image: raceData.imageUrl,
+    name: raceData.name || 'Untitled Race',
+    image: raceData.imageUrl || '',
     date: (() => {
       try {
+        if (!raceData.date) return 'Date TBD';
         let date: Date;
         if (raceData.date.includes('/')) {
           const [month, day, year] = raceData.date.split('/');
@@ -70,20 +98,20 @@ const RaceDetail = () => {
           day: 'numeric' 
         });
       } catch (error) {
-        return raceData.date;
+        return raceData.date || 'Date TBD';
       }
     })(),
-    location: `${raceData.city}, ${raceData.state}`,
-    distances: raceData.distanceOptions || [raceData.distance],
-    difficulty: raceData.difficulty,
+    location: `${raceData.city || 'Unknown'}, ${raceData.state || ''}`,
+    distances: raceData.distanceOptions || [raceData.distance || 'Unknown'],
+    difficulty: raceData.difficulty || 'Unknown',
     participants: raceData.participants,
-    elevationGain: raceData.elevationGain || (raceData.distance.includes("Marathon") ? 150 : raceData.distance.includes("Ultra") ? 5000 : 50),
-    courseType: raceData.courseType || (raceData.distance.includes("Ultra") ? "Trail" : "Road"),
+    elevationGain: raceData.elevationGain || ((raceData.distance || '').includes("Marathon") ? 150 : (raceData.distance || '').includes("Ultra") ? 5000 : 50),
+    courseType: raceData.courseType || ((raceData.distance || '').includes("Ultra") ? "Trail" : "Road"),
     startTime: raceData.startTime || "7:00 AM",
-    description: stripHtmlTags(raceData.description),
+    description: stripHtmlTags(raceData.description || 'No description available.'),
     registrationUrl: raceData.registrationUrl,
     highlights: [
-      `${raceData.difficulty} difficulty level`,
+      `${raceData.difficulty || 'Unknown'} difficulty level`,
       ...(raceData.participants ? [`${raceData.participants.toLocaleString()} expected participants`] : []),
       raceData.hasKidsRace ? "Family-friendly with kids races" : "Adults only",
       "Professional timing & support"
@@ -104,7 +132,7 @@ const RaceDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header searchQuery="" onSearchChange={() => {}} />
       
       {/* Hero Section */}
       <div className="relative h-[60vh] overflow-hidden">
