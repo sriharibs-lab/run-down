@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import RaceCard from "@/components/RaceCard";
+import NLSearchResults from "@/components/NLSearchResults";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,31 @@ import { getFilteredAndSortedRaces } from "@/lib/raceData";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useDebounce } from "@/hooks/useDebounce";
+
+interface SearchResponse {
+  answer: string;
+  tool_used: string;
+  tool_args: Record<string, string>;
+  races: {
+    id: string;
+    score: number;
+    metadata: {
+      name: string;
+      city: string;
+      state: string;
+      distance: string;
+      difficulty: string;
+      date: string;
+    };
+  }[];
+  latency: {
+    routing_ms: number;
+    embedding_ms: number;
+    search_ms: number;
+    llm_ms: number;
+    total_ms: number;
+  };
+}
 
 const Homepage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,6 +52,11 @@ const Homepage = () => {
   const [isLoadingRaces, setIsLoadingRaces] = useState(true);
   const navigate = useNavigate();
 
+  // AI search state
+  const [aiResult, setAiResult] = useState<SearchResponse | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [isAISearching, setIsAISearching] = useState(false);
+
   // Debounce search query with 300ms delay
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -34,7 +65,6 @@ const Homepage = () => {
     const loadInitialRaces = async () => {
       setIsLoadingRaces(true);
       try {
-        // Get all available races
         const races = await getFilteredAndSortedRaces({}, sortBy);
         setTotalAvailableRaces(races.length);
         setAllRaces(races);
@@ -44,7 +74,6 @@ const Homepage = () => {
         setIsLoadingRaces(false);
       }
     };
-    
     loadInitialRaces();
   }, [sortBy]);
 
@@ -53,7 +82,6 @@ const Homepage = () => {
   };
 
   const handleBrowseClick = () => {
-    // Scroll to the races section
     const racesSection = document.querySelector('.races-section');
     if (racesSection) {
       racesSection.scrollIntoView({ behavior: 'smooth' });
@@ -83,6 +111,44 @@ const Homepage = () => {
     setDateRange(undefined);
   };
 
+  // AI Search handler
+  const handleAISearch = async (query: string) => {
+    setIsAISearching(true);
+    setAiError(null);
+    setAiResult(null);
+
+    try {
+      const res = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Request failed (${res.status})`);
+      }
+
+      const data: SearchResponse = await res.json();
+      setAiResult(data);
+
+      // Scroll to results
+      setTimeout(() => {
+        const el = document.querySelector('.ai-results');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsAISearching(false);
+    }
+  };
+
+  const clearAIResults = () => {
+    setAiResult(null);
+    setAiError(null);
+  };
+
   // Filter and sort races based on selected criteria
   const [filteredAndSortedRaces, setFilteredAndSortedRaces] = useState<any[]>([]);
   const [filteredTotalCount, setFilteredTotalCount] = useState(0);
@@ -98,8 +164,6 @@ const Homepage = () => {
           state: selectedStates.length > 0 ? selectedStates : undefined,
           dateRange: dateRange
         };
-        
-        // Get all matching races
         const races = await getFilteredAndSortedRaces(filters, sortBy);
         setFilteredTotalCount(races.length);
         setFilteredAndSortedRaces(races);
@@ -109,18 +173,32 @@ const Homepage = () => {
         setIsFiltering(false);
       }
     };
-
     applyFilters();
   }, [debouncedSearchQuery, sortBy, selectedDistances, selectedStates, dateRange]);
 
   return (
     <div className="min-h-screen bg-background">
-      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-      
-      {/* Hero Section */}
-      <HeroSection 
-        onBrowseClick={handleBrowseClick}
+      <Header
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onAISearch={handleAISearch}
+        isAISearching={isAISearching}
       />
+
+      {/* AI Search Results - full page when active */}
+      {(aiResult || aiError || isAISearching) ? (
+        <div className="ai-results container mx-auto px-4 pt-10 pb-12">
+          <NLSearchResults
+            result={aiResult}
+            error={aiError}
+            isLoading={isAISearching}
+            onClear={clearAIResults}
+          />
+        </div>
+      ) : (
+      <>
+      {/* Hero Section */}
+      <HeroSection onBrowseClick={handleBrowseClick} />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
@@ -134,9 +212,9 @@ const Homepage = () => {
                   <h3 className="font-heading font-semibold text-lg">Filters</h3>
                 </div>
                 {(searchQuery || selectedDistances.length > 0 || selectedStates.length > 0 || dateRange) && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={clearFilters}
                     className="hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200"
                   >
@@ -191,7 +269,7 @@ const Homepage = () => {
                       <Checkbox
                         id={distance}
                         checked={selectedDistances.includes(distance)}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           handleDistanceChange(distance, checked as boolean)
                         }
                         className="transition-all duration-200 group-hover:scale-110"
@@ -216,7 +294,7 @@ const Homepage = () => {
                       <Checkbox
                         id={state}
                         checked={selectedStates.includes(state)}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           handleStateChange(state, checked as boolean)
                         }
                         className="transition-all duration-200 group-hover:scale-110"
@@ -269,8 +347,8 @@ const Homepage = () => {
                 </Select>
               </div>
             </div>
-        
-            {/* Race Display - List or Map View */}
+
+            {/* Race Display */}
             <div className="races-section">
               {isLoadingRaces || isFiltering ? (
                 <div className="flex items-center justify-center py-20">
@@ -304,7 +382,8 @@ const Homepage = () => {
           </div>
         </div>
       </div>
-
+      </>
+      )}
     </div>
   );
 };
