@@ -147,6 +147,7 @@ const Homepage = () => {
   const clearAIResults = () => {
     setAiResult(null);
     setAiError(null);
+    setSearchQuery("");
   };
 
   // Filter and sort races based on selected criteria
@@ -183,6 +184,7 @@ const Homepage = () => {
         onSearchChange={setSearchQuery}
         onAISearch={handleAISearch}
         isAISearching={isAISearching}
+        onLogoClick={clearAIResults}
       />
 
       {/* AI Search Results - full page when active */}

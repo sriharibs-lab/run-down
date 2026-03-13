@@ -10,9 +10,10 @@ interface HeaderProps {
   onSearchChange?: (query: string) => void;
   onAISearch?: (query: string) => void;
   isAISearching?: boolean;
+  onLogoClick?: () => void;
 }
 
-const Header = ({ searchQuery, onSearchChange, onAISearch, isAISearching }: HeaderProps) => {
+const Header = ({ searchQuery, onSearchChange, onAISearch, isAISearching, onLogoClick }: HeaderProps) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -42,7 +43,7 @@ const Header = ({ searchQuery, onSearchChange, onAISearch, isAISearching }: Head
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity flex-shrink-0">
+          <Link to="/" onClick={() => { onLogoClick?.(); handleClear(); }} className="flex items-center space-x-2 hover:opacity-80 transition-opacity flex-shrink-0">
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">
               RD
             </div>
