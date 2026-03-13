@@ -101,7 +101,7 @@ const Header = ({ searchQuery, onSearchChange, onAISearch, isAISearching }: Head
               Roadmap
             </Link>
             <a
-              href="https://srihari.lovable.app"
+              href="https://srihari.page"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 hidden md:flex"
