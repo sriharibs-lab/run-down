@@ -112,7 +112,7 @@ let cachedEmbeddings: RaceEmbedding[] | null = null;
 
 function loadEmbeddings(): RaceEmbedding[] {
   if (cachedEmbeddings) return cachedEmbeddings;
-  const filePath = resolve(process.cwd(), "data", "race-embeddings.json");
+  const filePath = resolve(__dirname, "..", "data", "race-embeddings.json");
   cachedEmbeddings = JSON.parse(readFileSync(filePath, "utf-8"));
   return cachedEmbeddings!;
 }
