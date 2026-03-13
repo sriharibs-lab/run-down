@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { readFileSync } from "fs";
-import { resolve } from "path";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 
 const FIREWORKS_API_KEY = process.env.FIREWORKS_API_KEY;
 const EMBED_ENDPOINT = "https://api.fireworks.ai/inference/v1/embeddings";
@@ -112,6 +113,8 @@ let cachedEmbeddings: RaceEmbedding[] | null = null;
 
 function loadEmbeddings(): RaceEmbedding[] {
   if (cachedEmbeddings) return cachedEmbeddings;
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
   const filePath = resolve(__dirname, "..", "data", "race-embeddings.json");
   cachedEmbeddings = JSON.parse(readFileSync(filePath, "utf-8"));
   return cachedEmbeddings!;
