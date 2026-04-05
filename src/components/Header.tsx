@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Search, Loader2, X } from "lucide-react";
+import { Sparkles, Search, Loader2, X, Mic, Square } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
+import { useVoiceSearch, type VoiceState } from "@/hooks/useVoiceSearch";
 
 interface HeaderProps {
   searchQuery?: string;
@@ -16,10 +17,31 @@ interface HeaderProps {
 const Header = ({ searchQuery, onSearchChange, onAISearch, isAISearching, onLogoClick }: HeaderProps) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const inputRef = useRef<HTMLInputElement>(null);
+  const pendingVoiceSearch = useRef(false);
+
+  const {
+    voiceState,
+    startRecording,
+    stopRecording,
+    error: voiceError,
+    clearError: clearVoiceError,
+  } = useVoiceSearch((text: string) => {
+    setLocalQuery(text);
+    onSearchChange?.(text);
+    pendingVoiceSearch.current = true;
+  });
 
   useEffect(() => {
     if (searchQuery !== undefined) setLocalQuery(searchQuery);
   }, [searchQuery]);
+
+  // Auto-trigger AI search after voice transcription
+  useEffect(() => {
+    if (pendingVoiceSearch.current && localQuery.trim()) {
+      pendingVoiceSearch.current = false;
+      onAISearch?.(localQuery.trim());
+    }
+  }, [localQuery]);
 
   const handleChange = (value: string) => {
     setLocalQuery(value);
@@ -90,7 +112,58 @@ const Header = ({ searchQuery, onSearchChange, onAISearch, isAISearching, onLogo
                   </>
                 )}
               </Button>
+              <Button
+                variant={voiceState === "recording" ? "destructive" : "outline"}
+                size="icon"
+                onClick={() => {
+                  clearVoiceError();
+                  if (voiceState === "recording") stopRecording();
+                  else if (voiceState === "idle") startRecording();
+                }}
+                disabled={isAISearching || voiceState === "transcribing"}
+                className="relative h-12 w-12 rounded-xl flex-shrink-0"
+                title={voiceState === "recording" ? "Stop recording" : "Voice search"}
+              >
+                {voiceState === "transcribing" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : voiceState === "recording" ? (
+                  <>
+                    <Square className="h-3.5 w-3.5 fill-current" />
+                    <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+                  </>
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </Button>
             </div>
+            {/* Voice state indicators */}
+            {voiceState === "recording" && (
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="flex items-center gap-1.5 text-xs text-red-600 font-medium">
+                  <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  Recording... click stop or wait 10s
+                </span>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  Voice powered by Fireworks Whisper
+                </span>
+              </div>
+            )}
+            {voiceState === "transcribing" && (
+              <div className="mt-1.5">
+                <span className="text-xs text-muted-foreground">Transcribing audio...</span>
+              </div>
+            )}
+            {voiceError && (
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-xs text-destructive">{voiceError}</span>
+                <button
+                  onClick={clearVoiceError}
+                  className="text-xs text-muted-foreground underline hover:text-foreground"
+                >
+                  dismiss
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Right side - Navigation */}
