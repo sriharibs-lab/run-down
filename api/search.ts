@@ -436,6 +436,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       answer,
       tool_used: toolUsed,
       tool_args: toolArgs,
+      model: CHAT_MODEL_ANSWER,
+      is_finetuned: true,
       races: matchedRaces.map(({ race, score }) => ({
         id: race.id,
         score: Math.round(score * 1000) / 1000,

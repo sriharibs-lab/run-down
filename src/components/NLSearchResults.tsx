@@ -30,6 +30,8 @@ interface SearchResponse {
   answer: string;
   tool_used: string;
   tool_args: Record<string, string>;
+  model: string;
+  is_finetuned: boolean;
   races: RaceResult[];
   latency: {
     routing_ms: number;
@@ -200,7 +202,10 @@ const NLSearchResults = ({ result, error, isLoading, onClear }: NLSearchResultsP
         <Zap className="h-3 w-3" />
         <span>
           Found in {(result.latency.total_ms / 1000).toFixed(1)}s via Fireworks
-          (route: {result.latency.routing_ms}ms | embed: {result.latency.embedding_ms}ms | search:{" "}
+          {result.model && (
+            <> | Model: {result.model.split("/").pop()}{result.is_finetuned ? " (fine-tuned)" : ""}</>
+          )}
+          {" "}(route: {result.latency.routing_ms}ms | embed: {result.latency.embedding_ms}ms | search:{" "}
           {result.latency.search_ms}ms | LLM: {result.latency.llm_ms}ms)
         </span>
       </div>

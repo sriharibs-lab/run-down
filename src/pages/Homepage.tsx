@@ -19,6 +19,8 @@ interface SearchResponse {
   answer: string;
   tool_used: string;
   tool_args: Record<string, string>;
+  model: string;
+  is_finetuned: boolean;
   races: {
     id: string;
     score: number;
