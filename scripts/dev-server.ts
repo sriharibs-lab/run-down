@@ -16,7 +16,8 @@ const FIREWORKS_API_KEY = process.env.FIREWORKS_API_KEY;
 const EMBED_ENDPOINT = "https://api.fireworks.ai/inference/v1/embeddings";
 const EMBED_MODEL = "nomic-ai/nomic-embed-text-v1.5";
 const CHAT_ENDPOINT = "https://api.fireworks.ai/inference/v1/chat/completions";
-const CHAT_MODEL = "accounts/fireworks/models/llama-v3p3-70b-instruct";
+const CHAT_MODEL_ROUTING = "accounts/fireworks/models/llama-v3p3-70b-instruct";
+const CHAT_MODEL_ANSWER = "accounts/srihari-srinivasa/deployments/d72jq6zg";
 const TOP_K = 5;
 
 // ── Types ──
@@ -134,9 +135,10 @@ async function embedQuery(query: string): Promise<number[]> {
 
 async function chatCompletion(
   messages: { role: string; content: string }[],
-  tools?: typeof TOOL_DEFINITIONS
+  tools?: typeof TOOL_DEFINITIONS,
+  model: string = CHAT_MODEL_ROUTING
 ): Promise<string> {
-  const body: Record<string, unknown> = { model: CHAT_MODEL, messages, max_tokens: 512, temperature: 0.7 };
+  const body: Record<string, unknown> = { model, messages, max_tokens: 512, temperature: 0.7 };
   if (tools) { body.tools = tools; body.tool_choice = "auto"; }
 
   const res = await fetch(CHAT_ENDPOINT, {
@@ -315,10 +317,14 @@ app.post("/api/search", async (req, res) => {
       : "You are a friendly running race advisor. Based on the race data provided, answer the user's question concisely. Mention specific race names, dates, and locations. If no races match well, say so honestly.";
 
     const llmStart = Date.now();
-    const answer = await chatCompletion([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: `Tool used: ${toolUsed}\nTool args: ${JSON.stringify(toolArgs)}\n\nResults:\n${raceContext}\n\nUser question: ${userQuery}` },
-    ]);
+    const answer = await chatCompletion(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Tool used: ${toolUsed}\nTool args: ${JSON.stringify(toolArgs)}\n\nResults:\n${raceContext}\n\nUser question: ${userQuery}` },
+      ],
+      undefined,
+      CHAT_MODEL_ANSWER
+    );
     const llmMs = Date.now() - llmStart;
     const totalMs = Date.now() - totalStart;
 
