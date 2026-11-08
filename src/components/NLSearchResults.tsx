@@ -16,6 +16,8 @@ import {
 interface RaceResult {
   id: string;
   score: number;
+  /** Every distance this race offers (duplicate scraper rows collapsed server-side). */
+  distances?: string[];
   metadata: {
     name: string;
     city: string;
@@ -54,10 +56,13 @@ const NLSearchResults = ({ result, error, isLoading, onClear }: NLSearchResultsP
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
+      case "Beginner":
+        return "bg-blue-50 border-blue-200 text-blue-700";
       case "Easy":
         return "bg-green-50 border-green-200 text-green-700";
       case "Moderate":
         return "bg-yellow-50 border-yellow-200 text-yellow-700";
+      case "Extreme":
       case "Challenging":
         return "bg-red-50 border-red-200 text-red-700";
       default:
@@ -173,7 +178,9 @@ const NLSearchResults = ({ result, error, isLoading, onClear }: NLSearchResultsP
                     </span>
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <TrendingUp className="h-3 w-3" />
-                      {race.metadata.distance}
+                      {race.distances && race.distances.length > 0
+                        ? race.distances.join(" · ")
+                        : race.metadata.distance || "Distance TBD"}
                     </span>
                   </div>
                 </div>

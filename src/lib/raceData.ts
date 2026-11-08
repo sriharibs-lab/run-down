@@ -35,7 +35,7 @@ export interface Race {
   city: string;
   state: string;
   distance: string;
-  difficulty: 'Easy' | 'Moderate' | 'Challenging' | 'Beginner';
+  difficulty: 'Beginner' | 'Easy' | 'Moderate' | 'Extreme' | 'Challenging';
   description: string;
   imageUrl: string;
   latitude: number;

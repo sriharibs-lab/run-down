@@ -9,7 +9,7 @@ interface RaceCardProps {
   date: string;
   location: string;
   distances: string[];
-  difficulty: "Easy" | "Moderate" | "Challenging" | "Beginner";
+  difficulty: "Beginner" | "Easy" | "Moderate" | "Extreme" | "Challenging" | string;
   participants?: number;
   onClick?: () => void;
 }
@@ -25,11 +25,15 @@ const RaceCard = ({
   onClick
 }: RaceCardProps) => {
   const getDifficultyBadgeClass = (diff: string) => {
+    // Scraper vocabulary is Beginner / Easy / Moderate / Extreme; "Challenging" kept for legacy data.
     switch (diff) {
+      case "Beginner":
+        return "badge-beginner";
       case "Easy":
         return "badge-easy";
       case "Moderate":
         return "badge-moderate";
+      case "Extreme":
       case "Challenging":
         return "badge-challenging";
       default:

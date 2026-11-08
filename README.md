@@ -104,7 +104,7 @@ Note that `npm run dev:api` uses the same models but has no fallback retry; only
 - Coverage is WA, OR and CA only. More states depend on the scraper, not this repo.
 - `data/race-embeddings.json` (6,420 vectors) lags `src/data/races.json` (6,541 races) because embeddings are rebuilt by hand while the race list updates nightly. Automating `embed-races` in the Action is the next fix.
 - The SFT metadata-extraction dataset (4,796 examples in `data/sft-training-data.jsonl`) has been generated but not yet used to train a model.
-- Known search-quality gaps: `filter_races` matches distance by substring ("half marathon" misses "13.1 Miles") and month by name ("this fall" returns nothing); the same race can appear twice when the scraper emits one row per distance. Fixing the tool schema is the next quality lever.
+- Search quality (fixed): `filter_races` now normalizes distances into canonical classes ("half marathon" / "13.1" / "13.1 Miles" all match), parses months, seasons and relative terms ("this fall", "Sept to Nov"), accepts the scraper's real difficulty vocabulary (Beginner / Easy / Moderate / Extreme, with challenging/hard mapped to Extreme) plus city and name-keyword filters, and every result list collapses the scraper's one-row-per-distance duplicates into a single race with all its distances. Remaining gap: ~21% of rows have no distance at all, so distance filters cannot match them; the fix is upstream in the scraper.
 - Map view is a placeholder ("Interactive Map Coming Soon"). No automated tests; the four `scripts/test-*.ts` files are manual harnesses run against a live endpoint.
 
 ## License
