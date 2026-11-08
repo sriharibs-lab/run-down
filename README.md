@@ -4,7 +4,15 @@ Natural-language and voice search over ~6,500 running races in Washington, Orego
 
 Live at https://run-down.vercel.app · Race data refreshed nightly by GitHub Actions
 
-<!-- TODO: add docs/screenshots/run-down-search.png (search results + latency footer) and restore the image tag -->
+![Run Down answering "challenging trail run near Portland" with an AI recommendation and top matching races](docs/screenshots/search-desktop.png)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/home-desktop.png" alt="Run Down homepage on desktop" /></td>
+    <td width="25%"><img src="docs/screenshots/home-iphone.png" alt="Run Down homepage on iPhone" /></td>
+    <td width="25%"><img src="docs/screenshots/search-iphone.png" alt="AI search results on iPhone" /></td>
+  </tr>
+</table>
 
 ## What it does
 

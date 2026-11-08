@@ -408,8 +408,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const systemPrompt =
       toolUsed.startsWith("compare")
-        ? "You are a friendly running race advisor. Compare the races provided side by side, highlighting differences in distance, difficulty, location, and date. Be concise and helpful."
-        : "You are a friendly running race advisor. Based on the race data provided, answer the user's question concisely. Mention specific race names, dates, and locations. If no races match well, say so honestly.";
+        ? "You are a friendly running race advisor. Compare the races provided side by side, highlighting differences in distance, difficulty, location, and date. Be concise and helpful. Reply in plain text only: no markdown, no asterisks, no tables, no headings. Short paragraphs or simple dash bullets are fine."
+        : "You are a friendly running race advisor. Based on the race data provided, answer the user's question concisely. Mention specific race names, dates, and locations. If no races match well, say so honestly. Reply in plain text only: no markdown, no asterisks, no tables, no headings. Short paragraphs or simple dash bullets are fine.";
 
     const llmStart = Date.now();
     const answerMessages = [
