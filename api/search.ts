@@ -7,12 +7,13 @@ const FIREWORKS_API_KEY = process.env.FIREWORKS_API_KEY;
 const EMBED_ENDPOINT = "https://api.fireworks.ai/inference/v1/embeddings";
 const EMBED_MODEL = "nomic-ai/nomic-embed-text-v1.5";
 const CHAT_ENDPOINT = "https://api.fireworks.ai/inference/v1/chat/completions";
-const CHAT_MODEL_ROUTING = "accounts/fireworks/models/llama-v3p3-70b-instruct";
-// Fine-tuned Llama 3.1 8B (LoRA, synthesis SFT). Serverless deployments on Fireworks are
-// torn down when idle, so answer generation falls back to the 70B base model when the
-// deployment is unreachable. Override with FIREWORKS_ANSWER_MODEL.
+// Fireworks retired the Llama 3.x serverless models in late 2026; gpt-oss-120b is the current base.
+const CHAT_MODEL_ROUTING = process.env.FIREWORKS_ROUTING_MODEL || "accounts/fireworks/models/gpt-oss-120b";
+// Answer model. Defaults to the routing model; set FIREWORKS_ANSWER_MODEL to a LoRA deployment id.
+// Any 400/404/503 from the configured answer model falls back to the base routing model
+// (Fireworks retires serverless models; the fallback keeps the app alive across churn).
 const CHAT_MODEL_FINETUNED =
-  process.env.FIREWORKS_ANSWER_MODEL || "accounts/srihari-srinivasa/deployments/d72jq6zg";
+  process.env.FIREWORKS_ANSWER_MODEL || CHAT_MODEL_ROUTING; // set to a deployment id to use the LoRA
 const CHAT_MODEL_FALLBACK = CHAT_MODEL_ROUTING;
 const TOP_K = 5;
 
