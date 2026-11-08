@@ -1,73 +1,102 @@
-# Welcome to your Lovable project
+# Run Down
 
-## Project info
+Natural-language and voice search over ~6,500 running races in Washington, Oregon and California. Ask "flat spring race in WA for kids" and get a short answer with real events, dates and locations, plus the latency breakdown for every step. Built for runners who are tired of filter grids, and for me as a place to learn the Fireworks AI stack end to end.
 
-**URL**: https://lovable.dev/projects/234db13f-9bc3-42a8-97cd-1ea8698545ae
+Live at https://run-down.vercel.app · Race data refreshed nightly by GitHub Actions
 
-## How can I edit this code?
+<!-- TODO: add docs/screenshots/run-down-search.png (search results + latency footer) and restore the image tag -->
 
-There are several ways of editing your application.
+## What it does
 
-**Use Lovable**
+- Answers plain-English race questions ("challenging trail run near Portland", "Thanksgiving 5K in California") with the top five matching races and a one-paragraph answer.
+- Takes voice input: hold the mic, speak for up to 10 seconds, and the transcript runs through the same search.
+- Routes each query to one of three tools: semantic search for vibe-style queries, exact filters for distance/state/difficulty/month, and side-by-side comparison for two named races.
+- Shows its work: every result card carries a similarity score, and the footer shows which model answered and the time spent on routing, embedding, search and generation.
+- Still has the classic browse UI: filter sidebar, race cards, a detail page per race and a map view.
+- Refreshes the race list every night from my separate scraper repo.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/234db13f-9bc3-42a8-97cd-1ea8698545ae) and start prompting.
+## How it works
 
-Changes made via Lovable will be committed automatically to this repo.
+The front end is a Vite + React + shadcn/ui app. The AI layer is two Vercel serverless functions, `api/search.ts` and `api/transcribe.ts`, both talking to Fireworks AI. There is no database: `scripts/embed-races.ts` embeds every race once with `nomic-ai/nomic-embed-text-v1.5` (768 dimensions) into `data/race-embeddings.json`, and the search function loads that file into memory on cold start and does brute-force cosine similarity on every request.
 
-**Use your preferred IDE**
+A search request runs in two LLM steps. First, `llama-v3p3-70b-instruct` is given the raw query and three tool definitions and asked to pick one. Second, the chosen tool runs locally (embedding + cosine, metadata filter, or fuzzy name match), and the top five races are handed to the answer model: a LoRA fine-tune of Llama 3.1 8B that I trained on 70B outputs. If the fine-tuned deployment is unreachable (Fireworks tears down idle serverless deployments), the function falls back to the 70B base model and reports which one answered.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```
+Browser ──text or 10s audio clip──▶ /api/transcribe ──▶ Fireworks whisper-v3 ──▶ transcript
+   │
+   ▼
+/api/search (Vercel function)
+   │
+   ├─ 1. Route: llama-v3p3-70b-instruct + 3 tool defs ──▶ semantic_search | filter_races | compare_races
+   │
+   ├─ 2. Run tool
+   │     semantic_search: nomic-embed-text-v1.5 (768-d) ──▶ cosine vs 6,420 in-memory vectors ──▶ top 5
+   │     filter_races:    distance / state / difficulty / month match on metadata ──▶ first 5
+   │     compare_races:   fuzzy name match (>= 0.3 word overlap) ──▶ up to 2 races
+   │
+   └─ 3. Answer: fine-tuned Llama 3.1 8B (LoRA) ──▶ on 400/404/503 fall back to 70B
+         ──▶ { answer, tool_used, model, is_finetuned, races[], latency{routing, embedding, search, llm, total} }
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+Nightly, 11:00 UTC: GitHub Action curls races.json from sriharibs-lab/race-scraper ──▶ commits src/data/races.json
 ```
 
-**Edit a file directly in GitHub**
+The browse UI (hero, filter sidebar, race cards, detail and map pages) was scaffolded with Lovable in September 2025. Everything under `api/`, `scripts/` and the search/voice components was hand-built afterwards, mostly with Claude Code.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Craft notes
 
-**Use GitHub Codespaces**
+- Routing is a separate LLM call rather than regex. The 70B model gets three tool schemas with `tool_choice: "auto"`, and the response is parsed either from `tool_calls` or from JSON in `content`; if neither parses, the query falls through to semantic search so a routing miss never fails the request (`api/search.ts`).
+- The answer model is a Llama 3.1 8B LoRA fine-tuned on 181 training examples: 201 gold answers generated by the 70B model, shuffled with a seeded mulberry32 PRNG and split 90/10 (20 held out for eval). Measured against the 70B prompted baseline: 644 ms vs 1,397 ms per answer, 2.2x faster, and 346 vs 403 characters, 14% shorter, with no system prompt needed (`FIREWORKS_NOTES.md`, `scripts/split-synthesis-data.ts`, `scripts/test-finetuned.ts`).
+- The fine-tuned deployment is serverless and gets torn down when idle, so the handler catches `Chat API error 400|404|503` on the answer call and retries once against the 70B base. The response includes `model` and `is_finetuned` so the UI can show which one actually answered (`api/search.ts`).
+- Fine-tuning leaked a training artifact: the 8B model sometimes echoes the `[similarity: 0.xxx]` annotations it saw in its training context. The fix is cleaning those out of the training examples or diversifying the outputs, not prompt-engineering around it (`FIREWORKS_NOTES.md`).
+- Embedding the catalog is batched 20 races per request with 3 retries and linear backoff (2 s, 4 s, 6 s). The first full run embedded 4,891 races in 138.2 s, about 28 ms per race, and the retry caught 2 transient socket errors that would otherwise have lost 3,280 embeddings (`scripts/embed-races.ts`, `FIREWORKS_NOTES.md`).
+- Search is brute force on purpose. The embeddings file is 47 MB and holds 6,420 vectors of 768 floats; a full cosine scan runs in a few hundred milliseconds on a Vercel function, so a vector database would add cost and a network hop without moving the bottleneck, which is LLM generation (`vercel.json`, `data/race-embeddings.json`, `FIREWORKS_NOTES.md`).
+- Voice search records up to 10 seconds of `audio/webm;codecs=opus` in the browser, posts it as multipart to `/api/transcribe`, which parses it with busboy (1 GB limit, 1 file) and calls Fireworks `whisper-v3` via the OpenAI-compatible audio endpoint (`src/hooks/useVoiceSearch.ts`, `api/transcribe.ts`).
+- Both training-data generators are resumable: each writes a progress JSON of completed IDs every 10 items, sleeps 2 s between calls, and backs off on HTTP 429 (8/16/24 s for the synthesis script, 10/20/30 s for the metadata script), so a crash mid-run never discards 70B output already paid for (`scripts/generate-sft-training-data.ts`, `scripts/generate-synthesis-training-data.ts`).
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Run locally
 
-## What technologies are used for this project?
+```sh
+git clone https://github.com/sriharibs-lab/run-down
+cd run-down
+npm install
+```
 
-This project is built with:
+Create `.env` in the repo root with one variable:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+FIREWORKS_API_KEY=
+```
 
-## How can I deploy this project?
+Then run the API and the UI in two terminals. Vite proxies `/api` to the Express dev server on port 3001.
 
-Simply open [Lovable](https://lovable.dev/projects/234db13f-9bc3-42a8-97cd-1ea8698545ae) and click on Share -> Publish.
+```sh
+npm run dev:api   # Express server for /api/search on :3001
+npm run dev       # Vite on :8080
+```
 
-## Can I connect a custom domain to my Lovable project?
+Other scripts:
 
-Yes, you can!
+```sh
+npm run embed-races                                   # rebuild data/race-embeddings.json from src/data/races.json
+npx tsx scripts/generate-sft-training-data.ts         # 70B extracts structured metadata per race -> data/sft-training-data.jsonl
+npx tsx scripts/generate-synthesis-training-data.ts   # 70B gold answers for data/sample-queries.txt -> data/sft-synthesis-train.jsonl
+npx tsx scripts/split-synthesis-data.ts               # 90/10 train/eval split, seed 42 -> data/synthesis-{train,eval}.jsonl
+npx tsx scripts/test-finetuned.ts                     # 8B fine-tune vs 70B on 5 queries
+npx tsx scripts/test-performance.ts [local]           # 50-query routing accuracy and latency suite
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Optional env var: `FIREWORKS_ANSWER_MODEL` overrides the fine-tuned deployment path used for answers.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Note that `npm run dev:api` always calls the fine-tuned deployment and has no 70B fallback; only the Vercel function in `api/search.ts` does. Voice search also only works against the deployed `/api/transcribe`.
+
+## Status / roadmap
+
+- Live and working for text search. The fine-tuned 8B deployment is often asleep, so most production answers currently come from the 70B fallback; redeploying the LoRA or committing to the fallback is the open decision.
+- Coverage is WA, OR and CA only. More states depend on the scraper, not this repo.
+- `data/race-embeddings.json` (6,420 vectors) lags `src/data/races.json` (6,541 races) because embeddings are rebuilt by hand while the race list updates nightly. Automating `embed-races` in the Action is the next fix.
+- The SFT metadata-extraction dataset (4,796 examples in `data/sft-training-data.jsonl`) has been generated but not yet used to train a model.
+- Map view is a placeholder ("Interactive Map Coming Soon"). No automated tests; the four `scripts/test-*.ts` files are manual harnesses run against a live endpoint.
+
+## License
+
+MIT. See `LICENSE`.

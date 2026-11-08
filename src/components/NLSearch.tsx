@@ -253,7 +253,7 @@ const NLSearch = () => {
           <div className="text-center space-y-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
             <p className="text-sm text-muted-foreground">
-              Searching across 4,891 races with AI...
+              Searching thousands of races with AI...
             </p>
           </div>
         </div>

@@ -1,5 +1,11 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "run-down",
+  "description": "Natural-language and voice search over ~6,500 running races in WA, OR and CA, built on Fireworks AI.",
+  "homepage": "https://run-down.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sriharibs-lab/run-down"
+  },
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -81,7 +87,6 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "express": "^5.2.1",
     "globals": "^15.15.0",
-    "lovable-tagger": "^1.1.9",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

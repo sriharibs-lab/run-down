@@ -8,7 +8,12 @@ const EMBED_ENDPOINT = "https://api.fireworks.ai/inference/v1/embeddings";
 const EMBED_MODEL = "nomic-ai/nomic-embed-text-v1.5";
 const CHAT_ENDPOINT = "https://api.fireworks.ai/inference/v1/chat/completions";
 const CHAT_MODEL_ROUTING = "accounts/fireworks/models/llama-v3p3-70b-instruct";
-const CHAT_MODEL_ANSWER = "accounts/srihari-srinivasa/deployments/d72jq6zg";
+// Fine-tuned Llama 3.1 8B (LoRA, synthesis SFT). Serverless deployments on Fireworks are
+// torn down when idle, so answer generation falls back to the 70B base model when the
+// deployment is unreachable. Override with FIREWORKS_ANSWER_MODEL.
+const CHAT_MODEL_FINETUNED =
+  process.env.FIREWORKS_ANSWER_MODEL || "accounts/srihari-srinivasa/deployments/d72jq6zg";
+const CHAT_MODEL_FALLBACK = CHAT_MODEL_ROUTING;
 const TOP_K = 5;
 
 // ── Types ──
@@ -406,17 +411,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         : "You are a friendly running race advisor. Based on the race data provided, answer the user's question concisely. Mention specific race names, dates, and locations. If no races match well, say so honestly.";
 
     const llmStart = Date.now();
-    const answer = await chatCompletion(
-      [
+    const answerMessages = [
         { role: "system", content: systemPrompt },
         {
           role: "user",
           content: `Tool used: ${toolUsed}\nTool args: ${JSON.stringify(toolArgs)}\n\nResults:\n${raceContext}\n\nUser question: ${userQuery}`,
         },
-      ],
-      undefined,
-      CHAT_MODEL_ANSWER
-    );
+      ];
+    let answerModel = CHAT_MODEL_FINETUNED;
+    let answer: string;
+    try {
+      answer = await chatCompletion(answerMessages, undefined, answerModel);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!/Chat API error (404|400|503)/.test(msg)) throw err;
+      console.warn(`[search] fine-tuned model unavailable, falling back to base: ${msg.slice(0, 120)}`);
+      answerModel = CHAT_MODEL_FALLBACK;
+      answer = await chatCompletion(answerMessages, undefined, answerModel);
+    }
     const llmMs = Date.now() - llmStart;
 
     const totalMs = Date.now() - totalStart;
@@ -436,8 +448,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       answer,
       tool_used: toolUsed,
       tool_args: toolArgs,
-      model: CHAT_MODEL_ANSWER,
-      is_finetuned: true,
+      model: answerModel,
+      is_finetuned: answerModel === CHAT_MODEL_FINETUNED,
       races: matchedRaces.map(({ race, score }) => ({
         id: race.id,
         score: Math.round(score * 1000) / 1000,

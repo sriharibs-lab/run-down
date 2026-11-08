@@ -28,7 +28,6 @@ interface Race {
 
 interface EmbeddingResult {
   id: string;
-  text: string;
   embedding: number[];
   metadata: {
     name: string;
@@ -116,7 +115,6 @@ async function main() {
     for (let j = 0; j < batch.length; j++) {
       results.push({
         id: batch[j].id,
-        text: texts[j],
         embedding: embeddings[j],
         metadata: {
           name: batch[j].name,

@@ -34,8 +34,8 @@ const HeroSection = ({ onBrowseClick }: HeroSectionProps) => {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-              Discover running events across America. 
-              Find races by distance, location, and terrain preferences.
+              Running events across Washington, Oregon and California.
+              Ask in plain English, or filter by distance, location and difficulty.
             </p>
           </div>
 
@@ -51,19 +51,19 @@ const HeroSection = ({ onBrowseClick }: HeroSectionProps) => {
             </Button>
           </div>
 
-          {/* Stats */}
+          {/* Stats — counts come from src/data/races.json, refreshed nightly */}
           <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto pt-8">
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">10,000+</div>
-              <div className="text-sm text-white/80">Active Races</div>
+              <div className="text-3xl font-bold text-white">6,500+</div>
+              <div className="text-sm text-white/80">Races Listed</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">50</div>
-              <div className="text-sm text-white/80">States Covered</div>
+              <div className="text-3xl font-bold text-white">3</div>
+              <div className="text-sm text-white/80">States: WA, OR, CA</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">1M+</div>
-              <div className="text-sm text-white/80">Happy Runners</div>
+              <div className="text-3xl font-bold text-white">Nightly</div>
+              <div className="text-sm text-white/80">Data Refresh</div>
             </div>
           </div>
         </div>

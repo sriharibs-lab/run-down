@@ -21,3 +21,31 @@
 ### Tool Calling (firefunction-v2)
 - Routing accuracy:
 - Edge cases that broke:
+
+## Fine-tuning results (synthesis SFT)
+
+### Numbers
+- Training examples: 180 (200 minus 10% eval)
+- Training time: ~[X] minutes
+- Cost: $0 (free tier, sub-16B)
+- Deployment cost: ~$[X] for testing window
+
+### 8B fine-tuned vs 70B prompted
+- Latency: 644ms vs 1,397ms (2.2x faster)
+- Response length: 346 vs 403 chars (14% shorter)
+- Quality: comparable or better
+- No system prompt needed for 8B
+
+### Observations
+- 8B is more direct; 70B hedges with "Unfortunately..."
+- 8B leaks similarity scores (training artifact)
+- Similarity score leak = the model learned the *format* 
+  of the training data too literally. Fixable by cleaning 
+  training examples or adding more diverse outputs.
+
+### Product friction log
+- epochs flag rejects floats (docs say supported)
+- Payment method required for free tier
+- firectl install path undocumented / 404 on GitHub
+- Deployment shape selection has no "recommended" default
+- LoRA vs multi-LoRA choice isn't explained at decision point
