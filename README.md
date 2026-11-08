@@ -8,8 +8,8 @@ Live at https://run-down.vercel.app · Race data refreshed nightly by GitHub Act
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/home-desktop.png" alt="Run Down homepage on desktop" /></td>
-    <td width="25%"><img src="docs/screenshots/home-iphone.png" alt="Run Down homepage on iPhone" /></td>
+    <td width="50%"><img src="docs/screenshots/home-desktop.jpg" alt="Run Down homepage on desktop" /></td>
+    <td width="25%"><img src="docs/screenshots/home-iphone.jpg" alt="Run Down homepage on iPhone" /></td>
     <td width="25%"><img src="docs/screenshots/search-iphone.png" alt="AI search results on iPhone" /></td>
   </tr>
 </table>
@@ -104,6 +104,7 @@ Note that `npm run dev:api` uses the same models but has no fallback retry; only
 - Coverage is WA, OR and CA only. More states depend on the scraper, not this repo.
 - `data/race-embeddings.json` (6,420 vectors) lags `src/data/races.json` (6,541 races) because embeddings are rebuilt by hand while the race list updates nightly. Automating `embed-races` in the Action is the next fix.
 - The SFT metadata-extraction dataset (4,796 examples in `data/sft-training-data.jsonl`) has been generated but not yet used to train a model.
+- Known search-quality gaps: `filter_races` matches distance by substring ("half marathon" misses "13.1 Miles") and month by name ("this fall" returns nothing); the same race can appear twice when the scraper emits one row per distance. Fixing the tool schema is the next quality lever.
 - Map view is a placeholder ("Interactive Map Coming Soon"). No automated tests; the four `scripts/test-*.ts` files are manual harnesses run against a live endpoint.
 
 ## License
